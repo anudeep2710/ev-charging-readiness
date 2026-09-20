@@ -78,6 +78,26 @@ Recommended pages:
 2. **Where is coverage weak?** — state map/scatter and a sortable priority table.
 3. **What drives readiness?** — facility type, network, station age, charging level, and access filters.
 
+## Dashboard preview visuals
+
+These Python-generated previews show the core findings used to shape the Power BI report. The processed tables in `data/processed/` are the source for both the visuals below and the Power BI model.
+
+### Coverage and availability by state
+
+![Coverage versus availability by state](outputs/figures/coverage_vs_availability.png)
+
+### Top states by public charging coverage
+
+![Top states by public charging coverage](outputs/figures/top_state_coverage.png)
+
+### Station service-readiness mix
+
+![Station service-readiness mix](outputs/figures/readiness_mix.png)
+
+### Stations by reported opening year
+
+![Stations by reported opening year](outputs/figures/stations_by_open_year.png)
+
 ## Key metrics
 
 - Public stations per 100,000 residents
