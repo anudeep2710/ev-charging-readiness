@@ -1,0 +1,64 @@
+facility_type,facility_type_label
+AIRPORT,Airport
+ARENA,Arena
+AUTO_REPAIR,Auto Repair
+B_AND_B,B And B
+BANK,Bank
+BREWERY_DISTILLERY_WINERY,Brewery Distillery Winery
+CAMPGROUND,Campground
+CAR_DEALER,Car Dealer
+CARWASH,Carwash
+COLLEGE_CAMPUS,College Campus
+CONVENIENCE_STORE,Convenience Store
+CONVENTION_CENTER,Convention Center
+COOP,Coop
+FACTORY,Factory
+FED_GOV,Fed Gov
+FIRE_STATION,Fire Station
+FLEET_GARAGE,Fleet Garage
+FUEL_RESELLER,Fuel Reseller
+GAS_STATION,Gas Station
+GROCERY,Grocery
+HARDWARE_STORE,Hardware Store
+HOSPITAL,Hospital
+HOTEL,Hotel
+INN,Inn
+LIBRARY,Library
+MIL_BASE,Mil Base
+MOTOR_POOL,Motor Pool
+MULTI_UNIT_DWELLING,Multi Unit Dwelling
+MUNI_GOV,Muni Gov
+MUSEUM,Museum
+NATL_PARK,Natl Park
+OFFICE_BLDG,Office Bldg
+OTHER,Other
+OTHER_ENTERTAINMENT,Other Entertainment
+PARK,Park
+PARKING_GARAGE,Parking Garage
+PARKING_LOT,Parking Lot
+PAY_GARAGE,Pay Garage
+PAY_LOT,Pay Lot
+PHARMACY,Pharmacy
+PLACE_OF_WORSHIP,Place Of Worship
+PRISON,Prison
+PUBLIC,Public
+REC_SPORTS_FACILITY,Rec Sports Facility
+RENTAL_CAR_RETURN,Rental Car Return
+RESEARCH_FACILITY,Research Facility
+REST_STOP,Rest Stop
+RESTAURANT,Restaurant
+RETAIL,Retail
+RV_PARK,Rv Park
+SCHOOL,School
+SHOPPING_CENTER,Shopping Center
+SHOPPING_MALL,Shopping Mall
+STADIUM,Stadium
+STANDALONE_STATION,Standalone Station
+STATE_GOV,State Gov
+STORAGE,Storage
+STREET_PARKING,Street Parking
+TRAVEL_CENTER,Travel Center
+TRUCK_STOP,Truck Stop
+Unknown,Unknown
+UTILITY,Utility
+WORKPLACE,Workplace

@@ -1,0 +1,8 @@
+.venv/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+data/raw/nrel_ev_stations.json
+data/raw/census_state_population_2025.csv
+!data/raw/source_metadata.json
+power_bi/model_wizard/

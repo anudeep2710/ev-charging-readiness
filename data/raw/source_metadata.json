@@ -1,0 +1,9 @@
+{
+  "downloaded_at_utc": "2026-09-20T09:21:55.792570+00:00",
+  "nrel_endpoint_used": "https://developer.nlr.gov/api/alt-fuel-stations/v1.json",
+  "nrel_total_results": 89394,
+  "nrel_records_saved": 89394,
+  "nrel_source_url": "https://developer.nrel.gov/docs/transportation/alt-fuel-stations-v1/all/",
+  "census_source_url": "https://www.census.gov/data/datasets/time-series/demo/popest/2020s-state-total.html",
+  "population_file": "https://www2.census.gov/programs-surveys/popest/datasets/2020-2025/state/totals/NST-EST2025-ALLDATA.csv"
+}

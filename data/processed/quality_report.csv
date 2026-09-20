@@ -1,0 +1,9 @@
+metric,value
+extract_date,2026-09-20
+station_rows,89394
+state_rows,52
+missing_latitude_pct,0.0
+missing_longitude_pct,0.0
+missing_total_ports_pct,0.00015661006331521132
+unknown_access_pct,0.0
+unknown_status_pct,0.0

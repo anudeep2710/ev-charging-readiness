@@ -1,0 +1,32 @@
+{
+  "schema": "codex.powerbi.dataContractDraft.v1",
+  "sources": [
+    "dim_facility",
+    "dim_network",
+    "dim_state",
+    "dim_year",
+    "ev_stations_clean",
+    "facility_summary",
+    "network_summary",
+    "open_year_summary",
+    "state_summary"
+  ],
+  "facts": [
+    "ev_stations_clean",
+    "state_summary",
+    "network_summary",
+    "facility_summary",
+    "open_year_summary"
+  ],
+  "dimensions": [
+    "dim_state",
+    "dim_network",
+    "dim_facility",
+    "dim_year"
+  ],
+  "rules": [
+    "Keys must be non-null and unique in dimensions.",
+    "Fact tables must reference dimensions through defined keys.",
+    "Every KPI must declare owner, grain, format, and refresh expectation."
+  ]
+}
