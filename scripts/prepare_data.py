@@ -102,7 +102,9 @@ def load_and_clean_stations() -> tuple[pd.DataFrame, str]:
     if stations.empty:
         raise RuntimeError("NREL station file is empty.")
 
-    as_of = datetime.now(timezone.utc).date()
+    source_metadata = json.loads((RAW_DIR / "source_metadata.json").read_text(encoding="utf-8"))
+    extracted_at = source_metadata["downloaded_at_utc"]
+    as_of = datetime.fromisoformat(extracted_at).date()
     as_of_year = as_of.year
 
     stations = stations[stations["fuel_type_code"].eq("ELEC")].copy()
@@ -170,7 +172,7 @@ def load_and_clean_stations() -> tuple[pd.DataFrame, str]:
         bins=[-1, 49, 79, 100],
         labels=["Priority review", "Partly ready", "Ready"],
     ).astype("string")
-    stations["extracted_at_utc"] = datetime.now(timezone.utc).isoformat()
+    stations["extracted_at_utc"] = extracted_at
 
     output_columns = [
         "station_id", "station_name", "street_address", "city", "state_abbr", "zip5",
@@ -333,6 +335,47 @@ def create_dimensions(
     }
 
 
+def create_encoded_features(stations: pd.DataFrame) -> pd.DataFrame:
+    """Create a compact, analysis-ready feature matrix with one-hot categories.
+
+    The Power BI fact table stays human-readable. This separate matrix is for
+    exploratory analysis or a future predictive model, so categorical labels
+    are encoded without turning the reporting table into opaque dummy fields.
+    Numeric missing values retain a flag and use the training-safe median.
+    """
+
+    numeric_columns = [
+        "latitude", "longitude", "station_age_years", "level_1_ports",
+        "level_2_ports", "dc_fast_ports", "other_ports", "total_ports",
+        "dc_fast_share", "readiness_score",
+    ]
+    boolean_columns = [
+        "is_public", "is_available", "has_dc_fast", "has_four_or_more_ports",
+        "pricing_listed",
+    ]
+    categorical_columns = [
+        "access_label", "status_label", "facility_type_label", "readiness_band",
+    ]
+
+    features = pd.DataFrame({"station_id": stations["station_id"].astype("int64")}).reset_index(drop=True)
+    for column in numeric_columns:
+        values = pd.to_numeric(stations[column], errors="coerce")
+        features[f"{column}_missing"] = values.isna().astype("int8")
+        fill_value = values.median()
+        features[column] = values.fillna(0 if pd.isna(fill_value) else fill_value)
+    for column in boolean_columns:
+        features[column] = stations[column].fillna(False).astype("int8")
+
+    categorical = stations[categorical_columns].copy().fillna("Not reported").astype("string")
+    encoded = pd.get_dummies(
+        categorical,
+        columns=categorical_columns,
+        prefix=categorical_columns,
+        dtype="int8",
+    )
+    return pd.concat([features, encoded.reset_index(drop=True)], axis=1)
+
+
 def write_data_dictionary() -> None:
     dictionary = pd.DataFrame(
         [
@@ -344,7 +387,7 @@ def write_data_dictionary() -> None:
             ("availability_rate", "Available stations divided by all stations in the group", "Derived"),
             ("dc_fast_station_share", "Stations with at least one DC fast port divided by all stations", "Derived"),
             ("readiness_score", "Transparent 0-100 heuristic using access, status, DC fast, port count, and pricing", "Derived"),
-            ("priority_score", "70% coverage gap plus 30% availability gap versus the median state", "Derived"),
+            ("priority_score", "70% coverage shortfall versus the jurisdiction median plus 30% share not marked available", "Derived"),
         ],
         columns=["field", "definition", "source_or_transform"],
     )
@@ -419,54 +462,10 @@ def make_figures(stations: pd.DataFrame, state: pd.DataFrame, year: pd.DataFrame
         sns.lineplot(data=year, x="open_year", y="new_stations", marker="o", color="#264653", ax=ax)
         ax.set_title("Stations by reported opening year")
         ax.set_xlabel("Opening year")
-        ax.set_ylabel("New stations")
+        ax.set_ylabel("Stations in current inventory")
         fig.tight_layout()
         fig.savefig(FIGURES_DIR / "stations_by_open_year.png", dpi=160)
         plt.close(fig)
-
-
-def write_interview_summary(stations: pd.DataFrame, state: pd.DataFrame) -> None:
-    total = len(stations)
-    public_share = stations["is_public"].mean()
-    availability_rate = stations["is_available"].mean()
-    dc_fast_share = stations["has_dc_fast"].mean()
-    priority = state.nlargest(5, "priority_score")[["state_abbr", "priority_score", "public_available_per_100k", "availability_rate"]]
-    best_density = state.nlargest(5, "public_available_per_100k")[["state_abbr", "public_available_per_100k"]]
-
-    lines = [
-        "# Current extract: interview summary",
-        "",
-        f"- NREL electric station records analyzed: **{total:,}**",
-        f"- Share marked public: **{public_share:.1%}**",
-        f"- Share marked available: **{availability_rate:.1%}**",
-        f"- Share with at least one DC fast port: **{dc_fast_share:.1%}**",
-        "",
-        "## Priority states by the project heuristic",
-        "",
-        "| State | Priority score | Public & available / 100k | Availability rate |",
-        "|---|---:|---:|---:|",
-    ]
-    for _, row in priority.iterrows():
-        lines.append(
-            f"| {row['state_abbr']} | {row['priority_score']:.1f} | "
-            f"{row['public_available_per_100k']:.2f} | {row['availability_rate']:.1%} |"
-        )
-    lines.extend([
-        "",
-        "## Highest per-capita coverage",
-        "",
-        "| State | Public & available / 100k |",
-        "|---|---:|",
-    ])
-    for _, row in best_density.iterrows():
-        lines.append(f"| {row['state_abbr']} | {row['public_available_per_100k']:.2f} |")
-    lines.extend([
-        "",
-        "## How to describe the result",
-        "",
-        "The dashboard distinguishes coverage from readiness. A high station count does not automatically mean strong access: the station may be private, planned, temporarily unavailable, or lack DC fast charging. The priority score is a screening tool for where to validate demand and site economics next; it is not a causal model and not a substitute for historical uptime or charger-session data.",
-    ])
-    (PROJECT_ROOT / "outputs" / "interview_summary.md").write_text("\n".join(lines), encoding="utf-8")
 
 
 def main() -> None:
@@ -483,11 +482,13 @@ def main() -> None:
     network.to_csv(PROCESSED_DIR / "network_summary.csv", index=False)
     facility.to_csv(PROCESSED_DIR / "facility_summary.csv", index=False)
     year.to_csv(PROCESSED_DIR / "open_year_summary.csv", index=False)
+    create_encoded_features(stations).to_csv(
+        PROCESSED_DIR / "station_features_encoded.csv", index=False
+    )
     for name, dimension in dimensions.items():
         dimension.to_csv(PROCESSED_DIR / f"{name}.csv", index=False)
     write_data_dictionary()
     make_figures(stations, state, year)
-    write_interview_summary(stations, state)
 
     quality = pd.DataFrame(
         [
@@ -506,7 +507,6 @@ def main() -> None:
 
     print(f"Prepared {len(stations):,} station rows and {len(state):,} state rows.")
     print(f"Power BI tables: {PROCESSED_DIR}")
-    print(f"Interview summary: {PROJECT_ROOT / 'outputs' / 'interview_summary.md'}")
 
 
 if __name__ == "__main__":

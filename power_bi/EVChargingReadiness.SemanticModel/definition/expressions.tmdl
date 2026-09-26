@@ -1,0 +1,4 @@
+expression ProjectRoot = "C:\Users\anude\OneDrive\Documents\acheivments\ev-charging-readiness" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: 947ce922-017d-4a58-9faf-b81063591e24
+
+	annotation PBI_ResultType = Text

@@ -1,0 +1,31 @@
+{
+  "name": "Coastal Readiness",
+  "dataColors": [
+    "#87BAC8",
+    "#E5AD91",
+    "#167E91",
+    "#599B8C",
+    "#C1D9DE",
+    "#9D8BBA"
+  ],
+  "background": "#FFFFFF",
+  "foreground": "#173C48",
+  "tableAccent": "#167E91",
+  "textClasses": {
+    "label": {
+      "fontFace": "Segoe UI",
+      "fontSize": 11,
+      "color": "#173C48"
+    },
+    "title": {
+      "fontFace": "Segoe UI Semibold",
+      "fontSize": 12,
+      "color": "#173C48"
+    },
+    "callout": {
+      "fontFace": "Segoe UI Semibold",
+      "fontSize": 30,
+      "color": "#173C48"
+    }
+  }
+}

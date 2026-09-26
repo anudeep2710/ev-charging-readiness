@@ -7,4 +7,4 @@ public_available_per_100k,"Public-and-available stations per 100,000 residents",
 availability_rate,Available stations divided by all stations in the group,Derived
 dc_fast_station_share,Stations with at least one DC fast port divided by all stations,Derived
 readiness_score,"Transparent 0-100 heuristic using access, status, DC fast, port count, and pricing",Derived
-priority_score,70% coverage gap plus 30% availability gap versus the median state,Derived
+priority_score,70% coverage shortfall versus the jurisdiction median plus 30% share not marked available,Derived

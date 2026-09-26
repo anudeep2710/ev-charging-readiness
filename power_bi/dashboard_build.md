@@ -1,112 +1,84 @@
-# Power BI build guide
+# Report and model guide
 
-## Load the data
+## Open the report
 
-In Power BI Desktop, use **Get data → Text/CSV** and load these tables from `data/processed/`:
+Use `EVChargingReadiness.pbix` for the saved, populated report. Use `EVChargingReadiness.pbip` for the editable source. Power BI Desktop is required; no Power BI Service account is needed for local use.
 
-- `ev_stations_clean.csv` — station-level detail
-- `state_summary.csv` — state-level metrics and population denominator
-- `network_summary.csv` — network comparison
-- `facility_summary.csv` — site/facility comparison
-- `open_year_summary.csv` — station opening trend
-- `dim_state.csv`, `dim_network.csv`, `dim_facility.csv`, `dim_year.csv` — small dimensions for slicers and relationships
+On another computer, update **Transform data → Edit parameters → ProjectRoot** to the repository's absolute path before refreshing. Or run `python scripts/build_powerbi.py` to regenerate the project with its local path.
 
-The summary tables are already aggregated for simple, reliable visuals. The station table is the detail table for slicers and drill-through.
+Keep the `.Report` and `.SemanticModel` folders alongside the PBIP. Local `.pbi` cache folders are ignored by Git.
 
-## Recommended relationships
+## Model
 
-Use the generated dimensions to keep the model close to a star schema. Create these single-direction relationships:
+```text
+Geography [state_abbr]  1 ───▶ *  Stations [state_abbr]
+  52 jurisdictions                 89,394 station locations
+  Census population                access, status, network, ports
+  fixed snapshot aggregates        readiness, reported opening year
+```
 
-- `dim_state[state_abbr]` → `ev_stations_clean[state_abbr]`
-- `dim_state[state_abbr]` → `state_summary[state_abbr]`
-- `dim_network[ev_network]` → `ev_stations_clean[ev_network]`
-- `dim_network[ev_network]` → `network_summary[ev_network]`
-- `dim_facility[facility_type]` → `ev_stations_clean[facility_type]`
-- `dim_facility[facility_type_label]` → `facility_summary[facility_type_label]`
-- `dim_year[open_year]` → `ev_stations_clean[open_year]`
-- `dim_year[open_year]` → `open_year_summary[open_year]`
+Filtering is single-direction from Geography to Stations. Every overview chart uses the station fact table so jurisdiction and access selections reach the same records. There are no disconnected facility/year summary charts.
 
-Do not relate the summary tables directly to each other.
+Supplementary summary CSVs support Python checks but are not separate reporting facts. Jurisdiction snapshot measures read Geography deliberately; they are used on the coverage-priority page, where only jurisdiction selection is offered.
 
-## Page 1 — Executive overview
+## Pages
 
-Add four Card visuals:
+**01 Network overview:** five KPI cards, opening-year cohorts split by access, readiness donut, jurisdiction table, six largest network footprints and a missing-facility KPI. Use the dropdowns or click chart marks. Click a selected mark again to clear it. Slicer selections apply to that page.
 
-- `Total Stations` = count of `ev_stations_clean[station_id]`
-- `Public Share`
-- `Availability Rate`
-- `DC Fast Station Share`
+**02 Coverage priorities:** weighted coverage, fixed median benchmark, below-median count, top-eight priorities, coverage leaders and a sortable shortlist. Cross-filtering changes the selected geography, not the benchmark or source score.
 
-Add these visuals:
+Both pages use native visuals with pale-blue backgrounds, rounded white containers and teal accents. Text notes are methodological guidance, not dynamic findings.
 
-1. Clustered bar: `state_summary[state_abbr]` by `public_available_per_100k`, sorted descending.
-2. Donut: `ev_stations_clean[readiness_band]` by count of `station_id`.
-3. Line chart: `open_year_summary[open_year]` by `new_stations`.
-4. Slicers: `state_abbr`, `access_label`, `status_label`, `ev_network`.
-
-## Page 2 — Where is coverage weak?
-
-Use `state_summary`.
-
-1. Scatter chart:
-   - X-axis: `public_available_per_100k`
-   - Y-axis: `availability_rate`
-   - Size: `population_2025`
-   - Legend or color: `priority_band`
-   - Details: `state_abbr`
-2. Table:
-   - `state_abbr`, `population_2025`, `public_available_per_100k`, `availability_rate`, `dc_fast_station_share`, `priority_score`, `priority_band`
-   - Conditional formatting on `priority_score`.
-3. Filled map or Azure Maps: state location using `state_abbr`, color by `priority_score`.
-
-Call out the limitation in a text box: “State is the first-pass planning geography; county/ZIP analysis is a recommended next step.”
-
-## Page 3 — What drives readiness?
-
-1. Bar chart: `facility_summary[facility_type_label]` by `stations`, with `availability_rate` in tooltips.
-2. Bar chart: `network_summary[ev_network]` by `stations`, filtered to top networks.
-3. 100% stacked bar: `access_label` by `status_label` using the station table.
-4. Table for station drill-through: name, city, state, status, access, network, total ports, DC fast ports, readiness score.
-
-## DAX measures
+## Important DAX patterns
 
 ```DAX
-Total Stations = DISTINCTCOUNT(ev_stations_clean[station_id])
-
-Public Stations =
-CALCULATE(
-    [Total Stations],
-    ev_stations_clean[is_public] = TRUE()
-)
-
-Available Stations =
-CALCULATE(
-    [Total Stations],
-    ev_stations_clean[is_available] = TRUE()
-)
+Total Stations = COALESCE(DISTINCTCOUNT(Stations[station_id]), 0)
 
 Public Available Stations =
 CALCULATE(
     [Total Stations],
-    ev_stations_clean[is_public_available] = TRUE()
+    KEEPFILTERS(Stations[is_public_available] = TRUE())
 )
 
-Public Share = DIVIDE([Public Stations], [Total Stations])
-
-Availability Rate = DIVIDE([Available Stations], [Total Stations])
-
-DC Fast Station Share =
+Coverage per 100k =
 DIVIDE(
-    CALCULATE([Total Stations], ev_stations_clean[has_dc_fast] = TRUE()),
+    [Public Available Stations] * 100000,
+    SUM(Geography[population_2025])
+)
+
+Availability Rate =
+DIVIDE(
+    CALCULATE([Total Stations], KEEPFILTERS(Stations[is_available] = TRUE())),
     [Total Stations]
 )
 
-Average Readiness Score = AVERAGE(ev_stations_clean[readiness_score])
+Snapshot Priority =
+IF(
+    HASONEVALUE(Geography[state_abbr]),
+    MAX(Geography[priority_score])
+)
 ```
 
-## Dashboard design choices
+`KEEPFILTERS` intersects the numerator with existing selections. Priority is blank at a multi-jurisdiction total because adding or averaging scores would not answer the question. Per-capita totals use summed counts and summed population.
 
-- Use a dark navy background, teal for healthy/available, amber for watch-list states, and coral for priority review.
-- Format rates as percentages and per-capita metrics to two decimals.
-- Keep the priority score labeled as a “screening heuristic.” Do not present it as a forecast.
-- Use tooltips to show station counts behind every rate.
+Complete measure definitions and descriptions are in `EVChargingReadiness.SemanticModel/definition/tables/Stations.tmdl`.
+
+## Validation and editing
+
+- Run `python scripts/validate_project.py` for keys, joins, score formulas, aggregate reconciliations and notebook execution.
+- Add `--schemas` to check definitions against Microsoft's published schemas; internet is required. Desktop may save a newer schema before Microsoft publishes it. The validator reports those files as unavailable, not passed; opening and testing the report in Desktop remains necessary.
+- Refresh in Desktop and compare unfiltered and California-filtered results with the processed CSV.
+- Actual report screenshots are in `outputs/dashboards/`; supplementary Python figures are separate.
+
+To redesign through code, edit `scripts/build_powerbi.py` and regenerate with Desktop closed. To retain manual visual changes, do not regenerate over them—edit/save the project directly instead.
+
+## Verification record
+
+Validated on September 26, 2026 against the September 20 source snapshot:
+
+- All 11 notebook code cells executed in order, with saved outputs and no errors.
+- 89,394 station IDs and all 52 jurisdiction joins, score formulas and aggregate reconciliations passed.
+- 312 live DAX results (52 jurisdictions × six metrics) matched the Python tables. National weighted coverage, blank priority totals and public/private filter intersections also passed.
+- 26 definition files passed their published Microsoft JSON schemas. The Desktop-emitted visual-container 2.12.0 schema was not yet available at its public URL; those files were checked by opening the report in Desktop, not certified by the schema validator.
+
+The read-only `scripts/validate_powerbi.ps1 -Port <local-model-port>` check compares an open Desktop model to the processed CSV. The local model port changes when Desktop restarts.

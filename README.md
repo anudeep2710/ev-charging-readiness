@@ -1,130 +1,123 @@
 # EV Charging Readiness & Accessibility
 
-## Portfolio project
+**Where should public charging coverage improve—and what should be checked before recommending expansion?**
 
-**Business question:** Where is public EV charging coverage weakest, and which states or station types should an operator review first for expansion and service-readiness improvements?
+A Python and Power BI analysis of **89,394 charging stations**, joined to population estimates for **50 U.S. states, Washington, D.C., and Puerto Rico**. The project separates how much charging exists, who can access it, and which areas deserve closer investigation.
 
-This project is deliberately scoped like a real analyst assignment. It combines a current operational inventory of U.S. electric charging stations with the latest U.S. state population estimates, then creates a Power BI-ready model and a transparent prioritization score.
+## Dashboard
 
-The interview story is simple:
+### Network overview
 
-1. Collect and clean a public operational dataset.
-2. Separate public, private, available, planned, and temporarily unavailable sites.
-3. Normalize station counts by population so large states do not automatically look worst.
-4. Identify the biggest coverage gaps and the operational patterns behind them.
-5. Turn the findings into a dashboard and a short list of actions.
+![Power BI network overview](outputs/dashboards/network_overview.png)
 
-## Why this is a good analyst project
+### Coverage priorities
 
-- It is more distinctive than a generic sales dashboard, but the logic is easy to explain.
-- It demonstrates API/file ingestion, data cleaning, joins, calculated metrics, exploratory analysis, and dashboard design.
-- The score is explainable. It is a prioritization heuristic, not a machine-learning black box.
-- The limitations are honest: the NREL data is a current snapshot, so “availability” is not the same as a long-run uptime measure.
+![Power BI coverage priorities](outputs/dashboards/coverage_priorities.png)
 
-## Data sources
+These images are exported directly from the working report. Charts, KPI cards, tables and slicers are native, interactive Power BI visuals—not a background image.
 
-1. **National Renewable Energy Laboratory (NREL) Alternative Fuel Stations API** — current U.S. electric charging station records, including location, access, status, charging levels, network, facility type, and funding fields.
-2. **U.S. Census Bureau Vintage 2025 State Population Estimates** — state population estimates through July 1, 2025, used as the denominator for stations per 100,000 residents.
+- [Download the ready-to-open report](power_bi/EVChargingReadiness.pbix)
+- [Browse the editable Power BI project](power_bi/EVChargingReadiness.pbip)
+- [Read the executed preprocessing notebook](notebooks/ev_charging_preprocessing.ipynb)
+- [Model, measures and refresh instructions](power_bi/dashboard_build.md)
+- [Download the exported dashboard PDF](outputs/dashboards/EVChargingReadiness.pdf)
 
-The pipeline downloads both sources and records the extraction time in `data/raw/source_metadata.json`. The data is not committed to version control by default because the NREL inventory changes over time.
+## Findings: September 20, 2026 snapshot
 
-## Project structure
+| Metric | Result |
+|---|---:|
+| Distinct station locations | 89,394 |
+| Public access | 93.8% |
+| Marked available | 97.7% |
+| At least one reported DC fast port | 18.2% |
+| Mean readiness score | 65.1 / 100 |
+| Jurisdiction median: public-and-available stations / 100,000 residents | 18.76 |
+
+- **Station count alone is misleading.** Vermont leads this snapshot in population-normalized public-and-available coverage at 84.23 stations per 100,000 residents; California records 50.68.
+- **Louisiana, Mississippi and Kentucky warrant closer study among the states.** Their screening scores are 50.9, 42.8 and 39.0. Puerto Rico scores 75.0, but its small inventory of 25 stations needs particular caution when interpreting rates.
+- **Missing data is a finding.** Facility type is unspecified for 75.1% of stations. Those records remain visible; they are not assigned a guessed category.
+
+The recommendation is a research shortlist, not a site-investment decision. Validate EV adoption, travel demand, rural access, outage history and site economics before selecting locations.
+
+## Sources and scope
+
+| Source | Used for |
+|---|---|
+| [NREL Alternative Fuel Stations API](https://developer.nrel.gov/docs/transportation/alt-fuel-stations-v1/all/) | Station ID, access, status, network, charging ports, location and reported opening date |
+| [U.S. Census Bureau population estimates](https://www.census.gov/data/datasets/time-series/demo/popest/2020s-state-total.html) | Vintage 2025 population denominator |
+
+The extraction timestamp and actual endpoint are recorded in [source metadata](data/raw/source_metadata.json). The processed snapshot is committed. Large raw downloads and local Power BI caches are excluded. Rerunning the download retrieves a newer inventory, which may change the results.
+
+## Analysis approach
+
+1. Download the station inventory and population file; preserve the extraction timestamp.
+2. Standardize status, access, network and facility labels; parse dates and numeric port counts.
+3. Validate station IDs, geographic keys, nonnegative counts and expected categories.
+4. Join station aggregates to Census population with a one-to-one jurisdiction key.
+5. Calculate coverage, readiness and a transparent screening priority.
+6. Export clean tables, execute the notebook and compare Power BI measures with Python results.
+
+### Data preparation and analysis
+
+The notebook separates reproducible preparation from analysis. It keeps unknown labels visible, converts source dates and counts to usable types, adds missing-value flags for numeric model features, and uses medians only for the separate analysis matrix. Low-cardinality fields (`access_label`, `status_label`, `facility_type_label` and `readiness_band`) are one-hot encoded with `pandas.get_dummies` in `data/processed/station_features_encoded.csv`; the reporting fact table remains readable for Power BI.
+
+The analysis compares population-normalized coverage, availability, fast-charging capability, network footprint, facility mix, readiness bands and current-inventory opening cohorts. The accompanying Python figures are exploratory checks; the interactive report is the final presentation layer.
+
+### Metric definitions
+
+**Coverage** = public-and-available station locations ÷ population × 100,000. Totals use a ratio of sums, not an average of state rates. A station location is not a charging port.
+
+**Readiness score (0–100)** = 30 points for public access + 30 for available status + 25 for a reported DC fast port + 10 for at least four reported ports + 5 for pricing information. Bands: Ready ≥80; Partly ready 50–79; Priority review <50.
+
+**Jurisdiction priority (0–100)** = 70% coverage gap + 30% status gap:
 
 ```text
-ev-charging-readiness/
-├── data/
-│   ├── raw/                  # downloaded source files
-│   └── processed/            # Power BI-ready fact, summary, and dimension tables
-├── outputs/
-│   ├── figures/              # Python QA/EDA charts
-│   └── interview_summary.md  # generated findings
-├── power_bi/
-│   └── dashboard_build.md    # report layout, relationships, and DAX
-├── scripts/
-│   ├── download_data.py      # source ingestion
-│   └── prepare_data.py       # cleaning, metrics, exports, EDA
-├── requirements.txt
-└── README.md
+coverage gap = max(0, median coverage - jurisdiction coverage) / median coverage × 100
+status gap   = (1 - availability rate) × 100
 ```
 
-## Run the project
+The benchmark is the median across all 52 jurisdictions. Weights are analyst assumptions, not empirically estimated effects. Priority is a fixed snapshot metric, so the second report page offers jurisdiction filtering without an access filter that would change its meaning.
 
-From this folder:
+## Reproduce the project
 
 ```powershell
 python -m venv .venv
 .venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
 python scripts\download_data.py
-python scripts\prepare_data.py
+python -m nbconvert --to notebook --execute --inplace notebooks\ev_charging_preprocessing.ipynb
+python scripts\validate_project.py
 ```
 
-The NREL API supports a `DEMO_KEY` for a small learning project. If it is rate-limited, set a personal NREL API key before running the download step:
+The notebook contains 11 executed code cells with saved outputs and assertions. It calls the reusable preprocessing functions in [scripts/prepare_data.py](scripts/prepare_data.py). For a script-only run, use `python scripts\prepare_data.py` after downloading.
+
+The API defaults to `DEMO_KEY`. If needed, set your own key in the `NREL_API_KEY` environment variable; never commit keys.
+
+To rebuild the editable report for your local clone:
 
 ```powershell
-$env:NREL_API_KEY = "your_key_here"
-python scripts\download_data.py
+python scripts\build_powerbi.py
+python scripts\validate_project.py --schemas
 ```
 
-## Power BI dashboard
+Open `power_bi/EVChargingReadiness.pbip` in Desktop, refresh and save. The builder sets `ProjectRoot` to your clone's location. Alternatively, change that parameter under **Transform data → Edit parameters**. The PBIX includes the saved snapshot and opens without downloading source data.
 
-Open Power BI Desktop and load the CSVs in `data/processed/`. The exact page plan, relationships, measures, and visual fields are in [`power_bi/dashboard_build.md`](power_bi/dashboard_build.md).
+## Repository guide
 
-The processed folder includes the station-level fact table, state/network/facility/year summary tables, and small `dim_*` tables for Power BI relationships. The large raw NREL JSON is intentionally regenerated by the download script instead of being committed to GitHub.
+| Folder | Contents |
+|---|---|
+| `notebooks/` | Executed preprocessing and validation notebook |
+| `scripts/` | Download, clean, build and validate workflows |
+| `data/processed/` | Station fact, jurisdiction metrics, supplementary summaries and dictionary |
+| `power_bi/` | Populated report, editable definitions and model notes |
+| `outputs/dashboards/` | Actual report screenshots |
+| `outputs/figures/` | Supplementary Python exploratory charts |
+| `data/processed/station_features_encoded.csv` | Analysis-ready numeric and one-hot encoded feature matrix |
 
-Recommended pages:
+## Limitations
 
-1. **Executive overview** — coverage, availability, fast-charging mix, and priority states.
-2. **Where is coverage weak?** — state map/scatter and a sortable priority table.
-3. **What drives readiness?** — facility type, network, station age, charging level, and access filters.
-
-## Dashboard preview visuals
-
-These Python-generated previews show the core findings used to shape the Power BI report. The processed tables in `data/processed/` are the source for both the visuals below and the Power BI model.
-
-### Coverage and availability by state
-
-![Coverage versus availability by state](outputs/figures/coverage_vs_availability.png)
-
-### Top states by public charging coverage
-
-![Top states by public charging coverage](outputs/figures/top_state_coverage.png)
-
-### Station service-readiness mix
-
-![Station service-readiness mix](outputs/figures/readiness_mix.png)
-
-### Stations by reported opening year
-
-![Stations by reported opening year](outputs/figures/stations_by_open_year.png)
-
-## Key metrics
-
-- Public stations per 100,000 residents
-- Public-and-available stations per 100,000 residents
-- Availability rate among inventoried stations
-- DC fast-charge station share
-- Public access share
-- Mean service-readiness score
-- Priority score: 70% coverage gap + 30% availability gap versus the median state
-
-The readiness score is intentionally transparent:
-
-- 30 points for public access
-- 30 points for currently available status
-- 25 points for at least one DC fast port
-- 10 points for at least four total ports
-- 5 points when pricing information is listed
-
-## Interview-ready summary
-
-Use the generated `outputs/interview_summary.md` for the exact numbers from the current extract. A concise answer structure is:
-
-> “I analyzed the NREL U.S. EV station inventory and joined it to Census population estimates. I cleaned station status and access fields, created per-capita coverage metrics, and built an explainable priority score. The dashboard separates coverage from readiness, so a state can have many stations but still have a low share that is public, available, or DC-fast capable. My recommendation is to use the priority table to target follow-up validation and expansion; I would not claim true reliability without historical outage or session data.”
-
-## Limitations and next steps
-
-- A station status is a snapshot, not historical uptime. A production version should add station-level status history or charger-session data.
-- State-level population is a useful first denominator but hides urban/rural variation. The next version should use ZIP/ZCTA or county population and road-travel demand.
-- Some charging-port counts are missing in the source, so a zero after cleaning means “no reported port count,” not guaranteed physical absence.
-- A stronger business recommendation would add EV registrations, highway traffic, multifamily housing, and electricity capacity/cost.
+- Availability is a source status at extraction, not charger uptime or a successful session.
+- Population does not capture EV ownership, visitors, traffic or urban/rural geography.
+- Missing port counts become zero reported ports, not proof that physical chargers do not exist.
+- Opening-year charts describe stations still in the current inventory, not all historical openings. Unknown years are excluded, and 2026 is incomplete.
+- The score rewards reporting completeness and infrastructure attributes, not observed customer outcomes.

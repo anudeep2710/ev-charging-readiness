@@ -1,0 +1,223 @@
+table Stations
+	lineageTag: e341b23e-52dd-47d6-94c5-7d062355d352
+
+	/// Distinct stations, not charging ports.
+	measure 'Total Stations' = COALESCE(DISTINCTCOUNT(Stations[station_id]), 0)
+		formatString: #,##0
+		lineageTag: 4a0db91e-7eed-4968-a594-16aed57d6392
+
+	/// Only stations with a reported opening year. Current inventory, not historical openings.
+	measure 'Opening Cohort Stations' = IF(NOT ISBLANK(SELECTEDVALUE(Stations[open_year])), [Total Stations])
+		formatString: #,##0
+		lineageTag: fb960faf-b50d-47f7-9634-d88fc5ea1d67
+
+	/// Public stations divided by all stations in the current filters.
+	measure 'Public Share' = DIVIDE(CALCULATE([Total Stations], KEEPFILTERS(Stations[is_public] = TRUE())), [Total Stations])
+		formatString: 0.0%
+		lineageTag: be9f6a5f-7e5c-469f-81a8-ebd89524b3c2
+
+	/// Inventory status, not measured uptime.
+	measure 'Availability Rate' = DIVIDE(CALCULATE([Total Stations], KEEPFILTERS(Stations[is_available] = TRUE())), [Total Stations])
+		formatString: 0.0%
+		lineageTag: 0acaaf98-ce22-4b96-8c67-db45306fe8e8
+
+	/// Stations with reported DC fast ports divided by all stations.
+	measure 'DC Fast Share' = DIVIDE(CALCULATE([Total Stations], KEEPFILTERS(Stations[has_dc_fast] = TRUE())), [Total Stations])
+		formatString: 0.0%
+		lineageTag: 4327b5c5-be8e-4b63-87de-44c69800ea4f
+
+	/// Mean 0-100 screening heuristic; not a quality certification.
+	measure 'Average Readiness' = AVERAGE(Stations[readiness_score])
+		formatString: 0.0
+		lineageTag: 39db81b9-3e5d-4aeb-b96f-5a89cf65cef5
+
+	/// Stations both public and marked available.
+	measure 'Public Available Stations' = CALCULATE([Total Stations], KEEPFILTERS(Stations[is_public_available] = TRUE()))
+		formatString: #,##0
+		lineageTag: af8efb2b-31db-47e0-b699-cb982dc51b84
+
+	/// Ratio of counts to selected population, never an unweighted average of state rates.
+	measure 'Coverage per 100k' = DIVIDE([Public Available Stations] * 100000, SUM(Geography[population_2025]))
+		formatString: 0.0
+		lineageTag: 9d3d7f9f-b16b-403f-a7be-1d2bbda4c013
+
+	/// Share with unspecified facility type; retain instead of guessing.
+	measure 'Unknown Facility Share' = DIVIDE(CALCULATE([Total Stations], KEEPFILTERS(Stations[facility_type_label] = "Unknown")), [Total Stations])
+		formatString: 0.0%
+		lineageTag: 9b02a16c-8889-43af-93eb-fc00b17d44ff
+
+	/// Rank within the selected jurisdictions.
+	measure 'Coverage Rank' = RANKX(ALLSELECTED(Geography[state_name]), [Coverage per 100k], , DESC, DENSE)
+		formatString: 0
+		lineageTag: 3663396d-bfc3-4e3f-bbcf-5ee21ede59a0
+
+	/// Top eight selected jurisdictions by public-and-available station density.
+	measure 'Top Coverage' = IF([Coverage Rank] <= 8, [Coverage per 100k])
+		formatString: 0.0
+		lineageTag: 8aa359a5-9679-4ead-b776-8dac7d0a086d
+
+	/// Station-count ranking within current filters.
+	measure 'Network Rank' = RANKX(ALLSELECTED(Stations[ev_network]), [Total Stations], , DESC, DENSE)
+		formatString: 0
+		lineageTag: 853b1084-b5cc-4da2-823e-b2a6896b96be
+
+	/// Top six networks; ties retained.
+	measure 'Top Network Stations' = IF([Network Rank] <= 6, [Total Stations])
+		formatString: #,##0
+		lineageTag: 32a142bd-f02d-4a37-902c-41a983ddf3a7
+
+	/// Fixed snapshot score; shown only at jurisdiction grain, not summed or averaged.
+	measure 'Snapshot Priority' = IF(HASONEVALUE(Geography[state_abbr]), MAX(Geography[priority_score]))
+		formatString: 0.0
+		lineageTag: 0c5b882d-93f3-4fc6-aaa8-1dd93b731bc0
+
+	/// Unfiltered station-inventory coverage for selected jurisdictions.
+	measure 'Snapshot Coverage' = DIVIDE(SUM(Geography[public_available_stations]) * 100000, SUM(Geography[population_2025]))
+		formatString: 0.0
+		lineageTag: fd8e704a-7d71-4bb2-bc15-a800ca8fcf67
+
+	/// Weighted availability from the full snapshot for selected jurisdictions.
+	measure 'Snapshot Availability' = DIVIDE(SUM(Geography[available_stations]), SUM(Geography[total_stations]))
+		formatString: 0.0%
+		lineageTag: b84d9ef7-c710-4856-be9b-85eb203eb275
+
+	/// Fixed median across the 52 source jurisdictions, including D.C. and Puerto Rico.
+	measure 'Median Coverage' = CALCULATE(MAX(Geography[national_median_public_available_per_100k]), REMOVEFILTERS(Geography))
+		formatString: 0.0
+		lineageTag: dd969551-1ae0-4634-b6f6-7ecaa20f074f
+
+	/// Selected population jurisdictions.
+	measure Jurisdictions = COUNTROWS(Geography)
+		formatString: 0
+		lineageTag: 863ea3f8-19f8-46d4-b82d-f420c1a37ae9
+
+	/// Jurisdictions below the fixed snapshot median.
+	measure 'Below Median' = COUNTROWS(FILTER(Geography, Geography[public_available_per_100k] < [Median Coverage]))
+		formatString: 0
+		lineageTag: 90e91d17-e35d-4337-8134-83b278fe9aca
+
+	/// Priority rank within selected jurisdictions.
+	measure 'Priority Rank' = RANKX(ALLSELECTED(Geography[state_name]), [Snapshot Priority], , DESC, DENSE)
+		formatString: 0
+		lineageTag: 27455b55-91bb-460c-a53b-997038502fd0
+
+	/// Eight highest screening priorities; ties retained.
+	measure 'Top Priority' = IF([Priority Rank] <= 8, [Snapshot Priority])
+		formatString: 0.0
+		lineageTag: 170c0550-4161-4843-8433-6cd02826333c
+
+	column station_id
+		dataType: int64
+		isHidden
+		lineageTag: a655e92d-2174-4795-a2e8-d02438dcd3da
+		summarizeBy: none
+		sourceColumn: station_id
+
+	column state_abbr
+		dataType: string
+		isHidden
+		lineageTag: 687c91e9-97ea-4ee7-9dea-d93370d866df
+		summarizeBy: none
+		sourceColumn: state_abbr
+
+	column station_name
+		dataType: string
+		lineageTag: ee81fb06-1f7e-4e29-8f07-c9098847a2e1
+		summarizeBy: none
+		sourceColumn: station_name
+
+	column city
+		dataType: string
+		lineageTag: b1c4bbb8-8473-4e44-ad48-a27d54e194e3
+		summarizeBy: none
+		sourceColumn: city
+
+	column access_label
+		dataType: string
+		lineageTag: 92390733-db40-4cf0-acff-d472ea37ce90
+		summarizeBy: none
+		sourceColumn: access_label
+
+	column status_label
+		dataType: string
+		lineageTag: 7314e854-6611-4152-b0e2-e23d3f0b2b50
+		summarizeBy: none
+		sourceColumn: status_label
+
+	column facility_type_label
+		dataType: string
+		lineageTag: bdee7f19-083c-4d68-ad34-99f7151e3eb7
+		summarizeBy: none
+		sourceColumn: facility_type_label
+
+	column ev_network
+		dataType: string
+		lineageTag: a55871a6-8b9a-4243-9e47-4b33667aa163
+		summarizeBy: none
+		sourceColumn: ev_network
+
+	column total_ports
+		dataType: double
+		lineageTag: 76b346f9-d338-44b0-8591-b3ff433fd140
+		summarizeBy: none
+		sourceColumn: total_ports
+
+	column dc_fast_ports
+		dataType: double
+		lineageTag: 6259fc96-889e-4b99-810a-7b69cfacc4f9
+		summarizeBy: none
+		sourceColumn: dc_fast_ports
+
+	column is_public
+		dataType: boolean
+		lineageTag: 6ed45524-1d11-49cf-a82d-405b8227355f
+		summarizeBy: none
+		sourceColumn: is_public
+
+	column is_available
+		dataType: boolean
+		lineageTag: 9301fb0e-68eb-4253-904e-db6468242486
+		summarizeBy: none
+		sourceColumn: is_available
+
+	column is_public_available
+		dataType: boolean
+		lineageTag: 4e12c065-5f02-444e-a7f6-dcb2c10d884d
+		summarizeBy: none
+		sourceColumn: is_public_available
+
+	column has_dc_fast
+		dataType: boolean
+		lineageTag: dee8e5af-3eec-4f83-a17e-ee44e5bc5054
+		summarizeBy: none
+		sourceColumn: has_dc_fast
+
+	column readiness_score
+		dataType: int64
+		lineageTag: 83bc7050-aeca-4ee5-a131-acb2ecdffd7a
+		summarizeBy: none
+		sourceColumn: readiness_score
+
+	column readiness_band
+		dataType: string
+		lineageTag: a9742921-1281-4421-86cc-83d482503237
+		summarizeBy: none
+		sourceColumn: readiness_band
+
+	column open_year
+		dataType: int64
+		lineageTag: 33dd0822-b214-4a5f-9c09-89fd90f54b71
+		summarizeBy: none
+		sourceColumn: open_year
+
+	partition Stations = m
+		mode: import
+		source =
+				let
+					Source = Csv.Document(File.Contents(ProjectRoot & "\data\processed\ev_stations_clean.csv"), [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+					Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+					Selected = Table.SelectColumns(Headers, {"station_id", "state_abbr", "station_name", "city", "access_label", "status_label", "facility_type_label", "ev_network", "total_ports", "dc_fast_ports", "is_public", "is_available", "is_public_available", "has_dc_fast", "readiness_score", "readiness_band", "open_year"}),
+					Nulls = Table.ReplaceValue(Selected, "", null, Replacer.ReplaceValue, Table.ColumnNames(Selected)),
+					Typed = Table.TransformColumnTypes(Nulls, {{"station_id", Int64.Type}, {"state_abbr", type text}, {"station_name", type text}, {"city", type text}, {"access_label", type text}, {"status_label", type text}, {"facility_type_label", type text}, {"ev_network", type text}, {"total_ports", type number}, {"dc_fast_ports", type number}, {"is_public", type logical}, {"is_available", type logical}, {"is_public_available", type logical}, {"has_dc_fast", type logical}, {"readiness_score", Int64.Type}, {"readiness_band", type text}, {"open_year", Int64.Type}}, "en-US")
+				in
+					Typed

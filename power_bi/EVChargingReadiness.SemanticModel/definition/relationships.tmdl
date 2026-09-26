@@ -1,0 +1,3 @@
+relationship Geography_Stations
+	fromColumn: Stations.state_abbr
+	toColumn: Geography.state_abbr

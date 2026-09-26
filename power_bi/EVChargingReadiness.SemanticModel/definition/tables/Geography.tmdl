@@ -1,0 +1,83 @@
+table Geography
+	lineageTag: 0f626824-0246-4571-bb61-165de185a1a1
+
+	column state_abbr
+		dataType: string
+		isHidden
+		isKey
+		lineageTag: 64791701-2505-4c5e-8e79-f7251264ac20
+		summarizeBy: none
+		sourceColumn: state_abbr
+
+	column state_name
+		dataType: string
+		lineageTag: 7b6ab7e0-adac-447f-b3c8-977dd05601f6
+		summarizeBy: none
+		sourceColumn: state_name
+
+	column population_2025
+		dataType: int64
+		isHidden
+		lineageTag: 49b2856c-30fe-47c4-a085-1c7666bbb896
+		summarizeBy: none
+		sourceColumn: population_2025
+
+	column total_stations
+		dataType: int64
+		isHidden
+		lineageTag: a431f547-b5e7-4251-b5b8-411dc7d8c8ab
+		summarizeBy: none
+		sourceColumn: total_stations
+
+	column available_stations
+		dataType: int64
+		isHidden
+		lineageTag: 8d84be5b-f25f-4c15-bf55-df6f8c3b32ad
+		summarizeBy: none
+		sourceColumn: available_stations
+
+	column public_available_stations
+		dataType: int64
+		isHidden
+		lineageTag: 545e6931-4dbf-4e1b-a00b-31e0ec9a914e
+		summarizeBy: none
+		sourceColumn: public_available_stations
+
+	column public_available_per_100k
+		dataType: double
+		isHidden
+		lineageTag: a7b283ad-0670-4656-9c73-7f98a8c99a8f
+		summarizeBy: none
+		sourceColumn: public_available_per_100k
+
+	column priority_score
+		dataType: double
+		isHidden
+		lineageTag: 0b7d34bc-e5a0-4c04-af39-c1435d9c4b80
+		summarizeBy: none
+		sourceColumn: priority_score
+
+	column priority_band
+		dataType: string
+		lineageTag: a90aab77-1235-4292-8c8a-e17a0277fd13
+		summarizeBy: none
+		sourceColumn: priority_band
+
+	column national_median_public_available_per_100k
+		dataType: double
+		isHidden
+		lineageTag: 6d7d396c-3dc9-4463-be49-99d6fb22f2f9
+		summarizeBy: none
+		sourceColumn: national_median_public_available_per_100k
+
+	partition Geography = m
+		mode: import
+		source =
+				let
+					Source = Csv.Document(File.Contents(ProjectRoot & "\data\processed\state_summary.csv"), [Delimiter=",", Encoding=65001, QuoteStyle=QuoteStyle.Csv]),
+					Headers = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+					Selected = Table.SelectColumns(Headers, {"state_abbr", "state_name", "population_2025", "total_stations", "available_stations", "public_available_stations", "public_available_per_100k", "priority_score", "priority_band", "national_median_public_available_per_100k"}),
+					Nulls = Table.ReplaceValue(Selected, "", null, Replacer.ReplaceValue, Table.ColumnNames(Selected)),
+					Typed = Table.TransformColumnTypes(Nulls, {{"state_abbr", type text}, {"state_name", type text}, {"population_2025", Int64.Type}, {"total_stations", Int64.Type}, {"available_stations", Int64.Type}, {"public_available_stations", Int64.Type}, {"public_available_per_100k", type number}, {"priority_score", type number}, {"priority_band", type text}, {"national_median_public_available_per_100k", type number}}, "en-US")
+				in
+					Typed

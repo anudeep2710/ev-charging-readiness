@@ -1,0 +1,346 @@
+cultureInfo en-US
+
+	linguisticMetadata =
+			{
+			  "Version": "2.0.0",
+			  "Language": "en-US",
+			  "Entities": {
+			    "stations.ev_network": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Stations",
+			          "ConceptualProperty": "ev_network"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Network": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "stations.top_network_stations": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Stations",
+			          "ConceptualProperty": "Top Network Stations"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Stations": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "stations.open_year": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Stations",
+			          "ConceptualProperty": "open_year"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Opening year": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "stations.opening_cohort_stations": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Stations",
+			          "ConceptualProperty": "Opening Cohort Stations"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Stations": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "stations.access_label": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Stations",
+			          "ConceptualProperty": "access_label"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Access": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "stations.total_stations": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Stations",
+			          "ConceptualProperty": "Total Stations"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Stations": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "stations.coverage_per_100k": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Stations",
+			          "ConceptualProperty": "Coverage per 100k"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Public + available / 100k": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "stations.availability_rate": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Stations",
+			          "ConceptualProperty": "Availability Rate"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Available": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "stations.dc_fast_share": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Stations",
+			          "ConceptualProperty": "DC Fast Share"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "DC fast": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "stations.snapshot_coverage": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Stations",
+			          "ConceptualProperty": "Snapshot Coverage"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Public + available / 100k": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "stations.snapshot_availability": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Stations",
+			          "ConceptualProperty": "Snapshot Availability"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Available": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "stations.snapshot_priority": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Stations",
+			          "ConceptualProperty": "Snapshot Priority"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Priority / 100": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "stations.top_priority": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Stations",
+			          "ConceptualProperty": "Top Priority"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Priority score": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "stations.top_coverage": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Stations",
+			          "ConceptualProperty": "Top Coverage"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Public + available / 100k": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "geography.state_name": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Geography",
+			          "ConceptualProperty": "state_name"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Jurisdiction": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "geography.priority_band": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Geography",
+			          "ConceptualProperty": "priority_band"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Review band": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			}
+		}
+	]
+}
+			  }
+			}
+		contentType: json
